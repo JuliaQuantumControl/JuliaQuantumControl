@@ -1,4 +1,4 @@
-.PHONY: help clone pull devrepl clean testall distclean
+.PHONY: help clone pull devrepl clean testall distclean check-circular-dependencies
 .DEFAULT_GOAL := help
 
 define PRINT_HELP_PYSCRIPT
@@ -44,6 +44,26 @@ export INIT_JL
 REMOTEROOT = git@github.com:JuliaQuantumControl
 ORGPKGS = QuantumPropagators QuantumControlBase Krotov GRAPE QuantumControl
 
+define CHECK_CIRCULAR_DEPS_JL
+using TOML
+folders = filter(x->isdir(x) && endswith(x, ".jl"), readdir("."))
+dependencies = Dict(chop(f, tail=3) => keys(TOML.parsefile(joinpath(f, "Project.toml"))["deps"]) for f in folders)
+print("dependencies = ")
+display(dependencies)
+println("")
+ok = true
+for project in keys(dependencies)
+    for dep in dependencies[project]
+        if project in get(dependencies, dep, [])
+		    println("ERROR: $$project and $$dep have a circular dependency")
+			global ok = false
+        end
+    end
+end
+ok && println("OK")
+endef
+export CHECK_CIRCULAR_DEPS_JL
+
 
 help:  ## show this help
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
@@ -69,6 +89,9 @@ clean: ## Clean up build/doc/testing artifacts
 
 testall: ## Run "make test" for all packages
 	@for folder in *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; make test); done
+
+check-circular-dependencies:  ## Check all projects for circular dependencies
+	@julia -e "$$CHECK_CIRCULAR_DEPS_JL"
 
 distclean: ## Remove all auto-generated files
 	@for folder in *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; make distclean); done
