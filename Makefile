@@ -19,6 +19,8 @@ export PRINT_HELP_PYSCRIPT
 define INIT_JL
 using Pkg
 Pkg.activate(".")
+Pkg.add("LocalRegistry"); using LocalRegistry
+Pkg.Registry.add(RegistrySpec(url="https://github.com/JuliaQuantumControl/QuantumControlRegistry.git"))
 using Revise
 println("""
 *******************************************************************************
@@ -42,7 +44,7 @@ endef
 export INIT_JL
 
 REMOTEROOT = git@github.com:JuliaQuantumControl
-ORGPKGS = QuantumPropagators QuantumControlBase Krotov GRAPE QuantumControl
+ORGPKGS = QuantumPropagators QuantumControlBase Krotov GRAPE QuantumControl GRAPELinesearchAnalysis
 
 define CHECK_CIRCULAR_DEPS_JL
 using TOML
