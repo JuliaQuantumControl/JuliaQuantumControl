@@ -72,13 +72,14 @@ help:  ## show this help
 
 
 clone: ## Clone all org repositories
+	if [ ! -d ".github" ]; then git clone "git@github.com:JuliaQuantumControl/.github.git"; fi
 	@for pkg in $(ORGPKGS); do echo "\n=======\n$$pkg"; if [ ! -d "$$pkg.jl" ]; then git clone "$(REMOTEROOT)/$$pkg.jl.git"; else echo "OK"; fi; done
 
 pull: ## Pull all org repositories
-	@for folder in *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; git remote update -p; git merge --ff-only @{u}); done
+	@for folder in .github *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; git remote update -p; git merge --ff-only @{u}); done
 
 status: ## Show git status for all checkouts
-	@for folder in *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; git status); done
+	@for folder in .github *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; git status); done
 
 Manifest.toml:
 	@for folder in *.jl; do julia --project=. -e "using Pkg; Pkg.develop(PackageSpec(path=\"$$folder\"))"; done
