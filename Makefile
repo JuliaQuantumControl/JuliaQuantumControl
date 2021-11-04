@@ -82,7 +82,7 @@ status: ## Show git status for all checkouts
 	@for folder in .github *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; git status); done
 
 Manifest.toml:
-	@for folder in *.jl; do julia --project=. -e "using Pkg; Pkg.develop(PackageSpec(path=\"$$folder\"))"; done
+	@julia --project=. -e "include(\"scripts/install.jl\")"
 
 devrepl: Manifest.toml ## Start an interactive REPL with the dev-version of all org repos
 	@julia --threads auto --project=test --banner=no --startup-file=yes -e "$$INIT_JL" -i
