@@ -21,12 +21,24 @@ using Pkg
 Pkg.activate(".")
 Pkg.add("LocalRegistry"); using LocalRegistry
 Pkg.Registry.add(RegistrySpec(url="https://github.com/JuliaQuantumControl/QuantumControlRegistry.git"))
+Pkg.add("Revise")
+Pkg.add("DrWatson")
+Pkg.add("JuliaFormatter")
+Pkg.add("Plots")
+Pkg.add("UnicodePlots")
 using Revise
+using JuliaFormatter
+using Plots
+unicodeplots()
 println("""
 *******************************************************************************
 DEVELOPMENT REPL for JuliaQuantumControl ORG
 
-Revise is active
+Revise is active.
+
+JuliaFormatter is active (use `format` function)
+
+Plots is active with backend UnicodePlots
 
 Run e.g.
 
