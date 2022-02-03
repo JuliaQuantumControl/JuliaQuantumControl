@@ -17,3 +17,4 @@ align_assignment = true
 align_struct_field = true
 align_pair_arrow = true
 align_matrix = true
+trailing_comma = "nothing"
