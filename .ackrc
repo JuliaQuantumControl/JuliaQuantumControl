@@ -1,0 +1,3 @@
+--ignore-file=match:/[.]jl[.][0-9]+[.]cov$/
+--ignore-file=match:/search_index[.]js$/
+--ignore-file=match:/docs\/build\/.*[.]html$/
