@@ -1,24 +1,20 @@
 .PHONY: help clone pull devrepl clean testall distclean check-circular-dependencies
 .DEFAULT_GOAL := help
 
-define PRINT_HELP_PYSCRIPT
-import re, sys
-
-for line in sys.stdin:
-    match = re.match(r'^([a-z0-9A-Z_-]+):.*?## (.*)$$', line)
-    if match:
-        target, help = match.groups()
-        print("%-20s %s" % (target, help))
-print("""
-
-Consider using a long-running Julia REPL for repeated tasks.
-""")
+define PRINT_HELP_JLSCRIPT
+rx = r"^([a-z0-9A-Z_-]+):.*?##[ ]+(.*)$$"
+for line in eachline()
+    m = match(rx, line)
+    if !isnothing(m)
+        target, help = m.captures
+        println("$$(rpad(target, 20)) $$help")
+    end
+end
 endef
-export PRINT_HELP_PYSCRIPT
-
+export PRINT_HELP_JLSCRIPT
 
 help:  ## show this help
-	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
+	@julia -e "$$PRINT_HELP_JLSCRIPT" < $(MAKEFILE_LIST)
 
 clone: ## Clone all org repositories
 	@julia scripts/clone.jl
