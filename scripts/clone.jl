@@ -28,6 +28,4 @@ function clone_org_repos()
     end
 end
 
-if abspath(PROGRAM_FILE) == @__FILE__
-    clone_org_repos()
-end
+clone_org_repos()

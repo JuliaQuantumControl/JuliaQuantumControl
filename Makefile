@@ -17,13 +17,8 @@ endef
 export PRINT_HELP_PYSCRIPT
 
 
-REMOTEROOT = git@github.com:JuliaQuantumControl
-ORGPKGS = QuantumPropagators QuantumControlBase Krotov GRAPE QuantumControl GRAPELinesearchAnalysis
-
-
 help:  ## show this help
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
-
 
 clone: ## Clone all org repositories
 	@julia scripts/clone.jl
@@ -38,7 +33,7 @@ Manifest.toml:
 	@julia --project=. -e 'include("scripts/installorg.jl"); installorg()'
 
 devrepl: Manifest.toml ## Start an interactive REPL with the dev-version of all org repos
-	@julia --threads auto --project=. --banner=no --startup-file=yes -e 'include("scripts/init.jl")' -i
+	@julia --project=. --banner=no --startup-file=yes -i devrepl.jl
 
 clean: ## Clean up build/doc/testing artifacts
 	@for folder in *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; make clean); done
