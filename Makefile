@@ -16,67 +16,9 @@ Consider using a long-running Julia REPL for repeated tasks.
 endef
 export PRINT_HELP_PYSCRIPT
 
-define INIT_JL
-using Pkg
-Pkg.activate(".")
-Pkg.add("LocalRegistry"); using LocalRegistry
-Pkg.Registry.add(RegistrySpec(url="https://github.com/JuliaQuantumControl/QuantumControlRegistry.git"))
-Pkg.add("Revise")
-Pkg.add("DrWatson")
-Pkg.add("JuliaFormatter")
-Pkg.add("Plots")
-Pkg.add("UnicodePlots")
-using Revise
-using JuliaFormatter
-using Plots
-unicodeplots()
-println("""
-*******************************************************************************
-DEVELOPMENT REPL for JuliaQuantumControl ORG
-
-Revise is active.
-
-JuliaFormatter is active (use `format` function)
-
-Plots is active with backend UnicodePlots
-
-Run e.g.
-
-    Pkg.test("QuantumControlBase")
-
-for running the test suite for an org-package.
-
-NOTE: Each org package also has its own "make devrepl" that may be more
-convenient to use when working on that particular package. The devrepls
-for the indvidual packages will also have access to the current checkout
-of all org packages that they depend on.
-*******************************************************************************
-""")
-endef
-export INIT_JL
 
 REMOTEROOT = git@github.com:JuliaQuantumControl
 ORGPKGS = QuantumPropagators QuantumControlBase Krotov GRAPE QuantumControl GRAPELinesearchAnalysis
-
-define CHECK_CIRCULAR_DEPS_JL
-using TOML
-folders = filter(x->isdir(x) && endswith(x, ".jl"), readdir("."))
-dependencies = Dict(chop(f, tail=3) => keys(TOML.parsefile(joinpath(f, "Project.toml"))["deps"]) for f in folders)
-print("dependencies = ")
-display(dependencies)
-println("")
-ok = true
-for project in keys(dependencies)
-    for dep in dependencies[project]
-        if project in get(dependencies, dep, [])
-		    println("ERROR: $$project and $$dep have a circular dependency")
-			global ok = false
-        end
-    end
-end
-ok && println("OK")
-endef
-export CHECK_CIRCULAR_DEPS_JL
 
 
 help:  ## show this help
@@ -94,10 +36,10 @@ status: ## Show git status for all checkouts
 	@for folder in .github *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; git status); done
 
 Manifest.toml:
-	@julia --project=. -e "include(\"scripts/install.jl\")"
+	@julia --project=. -e 'include("scripts/installorg.jl"); installorg()'
 
 devrepl: Manifest.toml ## Start an interactive REPL with the dev-version of all org repos
-	@julia --threads auto --project=test --banner=no --startup-file=yes -e "$$INIT_JL" -i
+	@julia --threads auto --project=. --banner=no --startup-file=yes -e 'include("scripts/init.jl")' -i
 
 clean: ## Clean up build/doc/testing artifacts
 	@for folder in *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; make clean); done
@@ -106,10 +48,9 @@ testall: ## Run "make test" for all packages
 	@for folder in *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; make test); done
 
 check-circular-dependencies:  ## Check all projects for circular dependencies
-	@julia -e "$$CHECK_CIRCULAR_DEPS_JL"
+	@julia scripts/check_circular_deps.jl
 
 distclean: ## Remove all auto-generated files
 	@for folder in *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; make distclean); done
 	@echo "\n=======\nORG devrepl toml-files"
-	rm -f Project.toml
 	rm -f Manifest.toml
