@@ -53,6 +53,7 @@ end
 This dev-installs all packages in `ORG_PACKAGES` into the current environment.
 """
 function installorg()
+    Pkg.Registry.add(Pkg.RegistrySpec("General"))
     Pkg.Registry.add(
         Pkg.RegistrySpec(
             url="https://github.com/JuliaQuantumControl/QuantumControlRegistry.git"
