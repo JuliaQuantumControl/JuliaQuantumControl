@@ -1,5 +1,7 @@
 import Pkg
 
+# ORG_PACKAGES must be ordered by their internal dependencies: Later packages
+# can depend on earlier ones, but not vice versa.
 ORG_PACKAGES = [
     "QuantumPropagators",
     "QuantumControlBase",
@@ -79,7 +81,15 @@ function installorg()
     else
         @info "Current package is $current_package at $git_root"
     end
-    for package in ORG_PACKAGES
+    # Counter-intuitively, we must dev-install packages in their reverse
+    # dependency order. This is because Pkg always fully instantiates an
+    # environment. In a project with depencies A, B where B depends on A, if we
+    # dev-install A, Pkg will try to also install B (from the registry!). This
+    # will fail if the *released* B is incompatible with the dev-installed A.
+    # However, if we dev-install B first, it will install a released version of
+    # A, and then we can dev-install A to *overwrite* the released version, and
+    # everything is OK
+    for package in reverse(ORG_PACKAGES)
         if package == current_package
             @info "Dev-install $package as current project from $git_root"
             Pkg.develop(path=git_root)
