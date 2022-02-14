@@ -1,6 +1,7 @@
 .PHONY: help clone pull devrepl clean testall distclean check-circular-dependencies
 .DEFAULT_GOAL := help
 
+JULIA ?= julia
 define PRINT_HELP_JLSCRIPT
 rx = r"^([a-z0-9A-Z_-]+):.*?##[ ]+(.*)$$"
 for line in eachline()
@@ -17,30 +18,28 @@ help:  ## show this help
 	@julia -e "$$PRINT_HELP_JLSCRIPT" < $(MAKEFILE_LIST)
 
 clone: ## Clone all org repositories
-	@julia scripts/clone.jl
+	@$(JULIA) scripts/clone.jl
 
 pull: ## Pull all org repositories
-	@for folder in .github *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; git remote update -p; git merge --ff-only @{u}); done
+	@$(JULIA) -e 'include("scripts/gitutils.jl"); pull()'
 
 status: ## Show git status for all checkouts
-	@for folder in .github *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; git status); done
+	@$(JULIA) -e 'include("scripts/gitutils.jl"); status()'
 
 Manifest.toml:
-	@julia --project=. -e 'include("scripts/installorg.jl"); installorg()'
+	@$(JULIA) --project=. -e 'include("scripts/installorg.jl"); installorg()'
 
 devrepl: Manifest.toml ## Start an interactive REPL with the dev-version of all org repos
-	@julia --project=. --banner=no --startup-file=yes -i devrepl.jl
+	@$(JULIA) --project=. --banner=no --startup-file=yes -i devrepl.jl
 
 clean: ## Clean up build/doc/testing artifacts
-	@for folder in *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; make clean); done
+	$(JULIA) -e 'include("scripts/clean.jl"); clean()'
 
-testall: ## Run "make test" for all packages
-	@for folder in *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; make test); done
+testall: Manifest.toml  ## Run "make test" for all packages
+	$(JULIA) --project=. -e 'include("scripts/testall.jl"); testall()'
 
 check-circular-dependencies:  ## Check all projects for circular dependencies
-	@julia scripts/check_circular_deps.jl
+	@$(JULIA) -e 'include("scripts/check_circular_deps.jl"); check_circular_dependencies()'
 
 distclean: ## Remove all auto-generated files
-	@for folder in *.jl; do echo "\n=======\n$$folder"; (cd "$$folder"; make distclean); done
-	@echo "\n=======\nORG devrepl toml-files"
-	rm -f Manifest.toml
+	$(JULIA) -e 'include("scripts/clean.jl"); clean(distclean=true)'

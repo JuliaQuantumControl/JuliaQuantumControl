@@ -19,4 +19,4 @@ if !isfile("Manifest.toml")
     include(joinpath("scripts", "installorg.jl"))
     installorg()
 end
-include("scripts/init.jl")
+include(joinpath("scripts", "init.jl"))
