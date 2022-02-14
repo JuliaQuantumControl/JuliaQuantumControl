@@ -24,7 +24,7 @@ Revise, JuliaFormatter, LiveServer, Plots with unicode backend are active.
   Run the test suite for `QuantumControlBase`. This may require a previous call
   to `testall()` to ensure that the subproject test environments are properly
   initialized.
-* `include("QuantumControlBase.jl/devrepl.jl")`-
+* `include("QuantumControlBase.jl/devrepl.jl")` –
   Switch to a development REPL for `QuantumControlBase`. To switch back,
   include the org-`devrepl.jl` (`include("../devrepl.jl")`)
 * `format(".")` – Apply code formatting to all files
@@ -34,6 +34,8 @@ Revise, JuliaFormatter, LiveServer, Plots with unicode backend are active.
   Check all packages for circular dependencies
 * `status()` – Show the git status for all projects
 * run_all(`git log -n 1`) – Show last log entry for each project
+* `register("./GRAPELinesearchAnalysis.jl", registry="QuantumControlRegistry")`
+  – Release a new version of `GRAPELinesearchAnalysis` on the org registry.
 * `clean()` – Clean up build/doc/testing artifacts across all projects
 * `distclean()` – Restore to a clean checkout state across all projects
 
