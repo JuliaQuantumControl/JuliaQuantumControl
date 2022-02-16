@@ -54,7 +54,11 @@ end
 
 """Install dev-versions of all the projects in the JuliaQuantumControl org.
 
-This dev-installs all packages in `ORG_PACKAGES` into the current environment.
+```julia
+installorg(;github="add", localfolders=true)
+```
+
+dev-installs all packages in `ORG_PACKAGES` into the current environment.
 
 It is assumed that the organization has been set up with the clone.jl script.
 That is, from the JuliaQuantumControl folder, the subprojects are in direct
@@ -62,12 +66,15 @@ subfolders, e.g. "QuantumControlBase.jl", and from the perspective of each
 package, the sibling packages are in sibling folders.
 
 Thus, the install scripts will check for the checkouts to dev-install as
-subfolders of the current folder (devrepl in JuliaQuantumControl) or in a
-sibling folder (devrepl of a package). If neither is available (e.g, when
-running on Github CI), it will install the master branch of any sibling package
+subfolders of the JuliaQuantumControl repo containing this function (devrepl in
+JuliaQuantumControl) or in a sibling folder (devrepl of a package). If neither
+is available (e.g, when running on Github CI), or when `localfolders=false`, it
+will install the master branch of any sibling package from Github. For
+`github="add"`, this is done via `Pkg.add`, and for `github="develop"` via
+`Pkg.develop`. Any other value (e.g.  `github=false`) prevents installation
 from Github.
 """
-function installorg()
+function installorg(;github="add", localfolders=true)
     Pkg.Registry.add(Pkg.RegistrySpec("General"))
     Pkg.Registry.add(
         Pkg.RegistrySpec(
@@ -95,21 +102,31 @@ function installorg()
             Pkg.develop(path=git_root)
         else
             path_candidates = [
+                joinpath(@__DIR__, "..", "$package.jl"),
                 joinpath(git_root, "$package.jl"),
                 joinpath(dirname(git_root), "$package.jl"),
             ]
             installed = false
-            for pkg_path ∈ path_candidates
-                if isdir(pkg_path)
-                    @info "Dev-install $package from $pkg_path"
-                    Pkg.develop(path=pkg_path)
-                    installed = true
-                    break
+            if localfolders
+                for pkg_path ∈ path_candidates
+                    if isdir(pkg_path)
+                        @info "Dev-install $package from $pkg_path"
+                        Pkg.develop(path=pkg_path)
+                        installed = true
+                        break
+                    end
                 end
             end
             if !installed  # fallback
-                @info "Dev-install $package from Github"
-                Pkg.develop(package)
+                if github == "add"
+                    @info "Add $package#master from Github"
+                    Pkg.add("$package#master")
+                elseif github == "develop"
+                    @info "Dev-install $package from Github"
+                    Pkg.develop(package)
+                else
+                    @error "$package could not be installed (github=false)"
+                end
             end
         end
     end
