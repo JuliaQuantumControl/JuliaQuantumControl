@@ -14,6 +14,8 @@ end
 """Run `git pull` (ff-only) for all projects."""
 function pull()
     org_root = dirname(@__DIR__)
+    run(Cmd(`git remote update -p`, dir=org_root))
+    run(Cmd(Cmd(["git", "merge", "--ff-only", "@{u}"]), dir=org_root))
     for package in ORG_PACKAGES
         pkg_root = joinpath(org_root, "$package.jl")
         @info "Pulling $package ($pkg_root)"
