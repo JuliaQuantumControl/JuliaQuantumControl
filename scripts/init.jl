@@ -9,6 +9,7 @@ include(joinpath(@__DIR__, "clean.jl"))
 include(joinpath(@__DIR__, "testall.jl"))
 include(joinpath(@__DIR__, "gitutils.jl"))
 include(joinpath(@__DIR__, "check_circular_deps.jl"))
+include(joinpath(@__DIR__, "ctags.jl"))
 
 REPL_MESSAGE = """
 *******************************************************************************
@@ -18,6 +19,7 @@ Revise, JuliaFormatter, LiveServer, Plots with unicode backend are active.
 
 * `help()` – Show this message
 * `testall()` – Run the test suites of all projects, with coverage
+* `create_tags()` – Create a `tags` (exuberant ctags) file for code navigation
 * `testall(genhtml=true)` –
   Also write an HTML coverage report for every package.
 * `include("QuantumControlBase.jl/test/runtests.jl")` –

@@ -1,4 +1,4 @@
-.PHONY: help clone pull devrepl clean testall distclean check-circular-dependencies
+.PHONY: help clone pull devrepl clean testall distclean check-circular-dependencies tags
 .DEFAULT_GOAL := help
 
 JULIA ?= julia
@@ -28,6 +28,9 @@ status: ## Show git status for all checkouts
 
 Manifest.toml:
 	@$(JULIA) --project=. -e 'include("scripts/installorg.jl"); installorg()'
+
+tags:  ## Generate a ctags file across all projects
+	@$(JULIA) --project=. -e 'include("scripts/ctags.jl"); create_tags()'
 
 devrepl: Manifest.toml ## Start an interactive REPL with the dev-version of all org repos
 	@$(JULIA) --project=. --banner=no --startup-file=yes -i devrepl.jl

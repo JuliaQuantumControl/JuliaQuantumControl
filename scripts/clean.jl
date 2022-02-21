@@ -38,6 +38,7 @@ function clean(; distclean=false, _exit=true)
     ###########################################################################
     DISTCLEAN = String[]
     _push!(DISTCLEAN, joinpath(ROOT, "Manifest.toml"))
+    _push!(DISTCLEAN, joinpath(ROOT, "tags"))
     ###########################################################################
 
     for name in CLEAN
