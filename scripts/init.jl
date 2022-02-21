@@ -1,5 +1,6 @@
 using Pkg
 using LocalRegistry
+using JET
 using Revise
 using JuliaFormatter
 using LiveServer: serve
@@ -15,7 +16,7 @@ REPL_MESSAGE = """
 *******************************************************************************
 DEVELOPMENT REPL for JuliaQuantumControl ORG
 
-Revise, JuliaFormatter, LiveServer, Plots with unicode backend are active.
+Revise, JET, JuliaFormatter, LiveServer, Plots with unicode backend are active.
 
 * `help()` – Show this message
 * `testall()` – Run the test suites of all projects, with coverage
