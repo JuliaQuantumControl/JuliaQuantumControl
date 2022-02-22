@@ -120,7 +120,7 @@ function installorg(;github="add", localfolders=true)
             if !installed  # fallback
                 if github == "add"
                     @info "Add $package#master from Github"
-                    Pkg.add("$package#master")
+                    Pkg.add(;url="https://github.com/JuliaQuantumControl/$package.jl", rev="master")
                 elseif github == "develop"
                     @info "Dev-install $package from Github"
                     Pkg.develop(package)
