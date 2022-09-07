@@ -5,12 +5,16 @@ using Revise
 using JuliaFormatter
 using LiveServer: serve
 using Plots
+using Term
+
 unicodeplots()
+
 include(joinpath(@__DIR__, "clean.jl"))
 include(joinpath(@__DIR__, "testall.jl"))
 include(joinpath(@__DIR__, "gitutils.jl"))
 include(joinpath(@__DIR__, "check_circular_deps.jl"))
 include(joinpath(@__DIR__, "ctags.jl"))
+
 
 REPL_MESSAGE = """
 *******************************************************************************
