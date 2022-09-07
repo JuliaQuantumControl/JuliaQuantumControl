@@ -131,6 +131,7 @@ function installorg(;github="add", localfolders=true)
         end
     end
     Pkg.instantiate()
+    Pkg.precompile()
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
