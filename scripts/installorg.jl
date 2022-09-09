@@ -130,8 +130,12 @@ function installorg(;github="add", localfolders=true)
             end
         end
     end
+    @info "Instantiate"
     Pkg.instantiate()
+    @info "Precompile"
     Pkg.precompile()
+    @info "Status"
+    Pkg.status()
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
