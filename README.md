@@ -62,9 +62,10 @@ To add the `QuantumControlRegistry` to your julia installation, run
 pkg> registry add https://github.com/JuliaQuantumControl/QuantumControlRegistry.git
 ~~~
 
-To add packages to `QuantumControlRegistry`, or create new releases for previously added packages, use the `register` command in the [org-level REPL](#org-level-makefile) (`make devrepl`), e.g.,
+To add packages to `QuantumControlRegistry`, or create new releases for previously added packages, use the `LocalRegistry.register` command in the [org-level REPL](#org-level-makefile) (`make devrepl`), e.g.,
 
 ~~~
+using LocalRegistry
 register("./GRAPELinesearchAnalysis.jl/", registry="QuantumControlRegistry")
 ~~~
 

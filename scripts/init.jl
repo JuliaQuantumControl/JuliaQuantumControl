@@ -1,5 +1,4 @@
 using Pkg
-using LocalRegistry
 using JET
 using Revise
 using JuliaFormatter
@@ -41,7 +40,8 @@ Revise, JET, JuliaFormatter, LiveServer, Plots with unicode backend are active.
   Check all packages for circular dependencies
 * `status()` – Show the git status for all projects
 * run_all(`git log -n 1`) – Show last log entry for each project
-* `register("./GRAPELinesearchAnalysis.jl", registry="QuantumControlRegistry")`
+* `using LocalRegistry`, followed by
+  `register("./GRAPELinesearchAnalysis.jl", registry="QuantumControlRegistry")`
   – Release a new version of `GRAPELinesearchAnalysis` on the org registry.
 * `clean()` – Clean up build/doc/testing artifacts across all projects
 * `distclean()` – Restore to a clean checkout state across all projects
