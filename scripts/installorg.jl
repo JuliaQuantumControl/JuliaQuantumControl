@@ -8,6 +8,7 @@ ORG_PACKAGES = [
     "Krotov",
     "GRAPE",
     "QuantumControl",
+    "QuantumControlTestUtils",
     "GRAPELinesearchAnalysis"
 ]
 
