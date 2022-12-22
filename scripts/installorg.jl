@@ -5,6 +5,7 @@ import Pkg
 ORG_PACKAGES = [
     "QuantumPropagators",
     "QuantumControlBase",
+    "QuantumGradientGenerators",
     "Krotov",
     "GRAPE",
     "QuantumControl",
