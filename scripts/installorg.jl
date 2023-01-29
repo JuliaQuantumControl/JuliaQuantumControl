@@ -10,7 +10,8 @@ ORG_PACKAGES = [
     "GRAPE",
     "QuantumControl",
     "QuantumControlTestUtils",
-    "GRAPELinesearchAnalysis"
+    "GRAPELinesearchAnalysis",
+    "TwoQubitWeylChamber",
 ]
 
 
