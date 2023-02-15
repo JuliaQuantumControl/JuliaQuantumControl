@@ -1,10 +1,10 @@
-using QuantumControlBase.TestUtils: test as _test
+using QuantumControlTestUtils: test as _test
 include(joinpath(@__DIR__, "installorg.jl"))  # define ORG_PACKAGES
 
 
 """Run the full test-suite for all projects.
 
-Keyword arguments are forwarded to `QuantumControlBase.TestUtils.test`.
+Keyword arguments are forwarded to `QuantumControlTestUtils.test`.
 """
 function testall(; root=nothing, project=nothing, kwargs...)
     # `root` and `project` are just to capture those arguments from `kwargs`
