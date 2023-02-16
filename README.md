@@ -52,6 +52,31 @@ make devrepl
 for a Julia REPL with the dev-version of all projects available. Note that this is in addition to the development REPL available for each individual project (`make devrepl` in the project folder), which also has access to the sibling projects.
 
 
+## Making Releases
+
+If releases need to be made for multiple packages across the organization, they must be made in the order listed in the [package table](https://github.com/JuliaQuantumControl#packages)
+
+For each package, for a release `X.Y.Z`, e.g. `1.0.0`, do the following from the `master` branch:
+
+- [ ] `git checkout -b release-1.0.0`
+- [ ] Modify `Project.toml` to bump to the new version number, set `compat` for all dependencies in the JuliaQuantumControl org to the latest release (removing any `>=` specification)
+- [ ] Make a commit with message "Release 1.0.0"
+- [ ] `git push -u origin release-1.0.0`
+- [ ] Create a pull request
+- [ ] Apply the "no changelog" label
+- [ ] Wait for continuous integration to finish
+- [ ] Go to the main Github profile for the package
+- [ ] Select the `release-1.0.0` branch in the top left
+- [ ] Click on the commit ID of the release commit in the table title row
+- [ ] Comment `@JuliaRegistrator register` on the commit
+- [ ] Wait for JuliaRegistrator and Tagbot to make and tag a release, wait for all CI to finish
+- [ ] In the terminal, switch to the `master` branch
+- [ ] `git merge --no-ff --no-commit release-1.0.0`
+- [ ] Edit `Project.toml` to append `+dev` to the version number (e.g., `1.0.0+dev`), prepend `>=` to the compat specification of all dependencies in the JuliaQuantumControl organization.
+- [ ] `git commit` to make a merge commit, use "Bump version to 1.0.0+dev" as the commit message
+- [ ] `git push` to push the `master`
+
+
 ## The QuantumControlRegistry
 
 [Working with unregistered packages in Julia is tricky.](https://discourse.julialang.org/t/cant-figure-out-how-to-dev-install-unregistered-package/70298). Therefore, we have a [QuantumControlRegistry](https://github.com/JuliaQuantumControl/QuantumControlRegistry) to register any packages withing the `JuliaQuantumControl` organization that should not be or are not ready yet for the [Julia General Registry](https://github.com/JuliaRegistries/General). Packages must be registered *either* in `QuantumControlRegistry` *or* in `General`: when a package gets added to `General`, it should be removed from `QuantumControlRegistry`.
