@@ -126,7 +126,7 @@ function installorg(;github="add", localfolders=true)
                     Pkg.add(;url="https://github.com/JuliaQuantumControl/$package.jl", rev="master")
                 elseif github == "develop"
                     @info "Dev-install $package from Github"
-                    Pkg.develop(package)
+                    Pkg.develop(;url="https://github.com/JuliaQuantumControl/$package.jl")
                 else
                     @error "$package could not be installed (github=false)"
                 end
