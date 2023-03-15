@@ -12,6 +12,7 @@ ORG_PACKAGES = [
     "QuantumControlTestUtils",
     "GRAPELinesearchAnalysis",
     "TwoQubitWeylChamber",
+    "QuantumCitations",
 ]
 
 
