@@ -58,10 +58,13 @@ end
 """Install dev-versions of all the projects in the JuliaQuantumControl org.
 
 ```julia
-installorg(;github="add", localfolders=true)
+installorg(;github="add", localfolders=true, dependencies_only=true)
 ```
 
-dev-installs all packages in `ORG_PACKAGES` into the current environment.
+dev-installs packages from `ORG_PACKAGES` into the current environment. By
+default, only packages explicitly listed as dependencies in the current
+`Project.toml` will be installed. By setting `dependnecies_only=false`, *all*
+packages in `ORG_PACKAGES` will be installed (which may modify `Project.toml`).
 
 It is assumed that the organization has been set up with the clone.jl script.
 That is, from the JuliaQuantumControl folder, the subprojects are in direct
@@ -77,13 +80,14 @@ will install the master branch of any sibling package from Github. For
 `Pkg.develop`. Any other value (e.g.  `github=false`) prevents installation
 from Github.
 """
-function installorg(;github="add", localfolders=true)
+function installorg(;github="add", localfolders=true, dependencies_only=true)
     Pkg.Registry.add(Pkg.RegistrySpec("General"))
     Pkg.Registry.add(
         Pkg.RegistrySpec(
             url="https://github.com/JuliaQuantumControl/QuantumControlRegistry.git"
         )
     )
+    project_toml = Pkg.project()
     current_package = get_current_package()
     git_root = find_git_root()
     if current_package == ""
@@ -104,6 +108,12 @@ function installorg(;github="add", localfolders=true)
             @info "Dev-install $package as current project from $git_root"
             Pkg.develop(path=git_root)
         else
+            if !(package in keys(project_toml.dependencies))
+                if dependencies_only
+                    @info "Skipping $package (not a project dependency)"
+                    continue
+                end
+            end
             path_candidates = [
                 joinpath(@__DIR__, "..", "$package.jl"),
                 joinpath(git_root, "$package.jl"),
