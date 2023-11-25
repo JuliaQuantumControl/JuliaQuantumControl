@@ -10,6 +10,8 @@ function clean(; distclean=false, _exit=true)
 
     _exists(name) = isfile(name) || isdir(name)
     _push!(lst, name) = _exists(name) && push!(lst, name)
+    _glob(folder, ending) =
+        [name for name in readdir(folder; join=true) if (name |> endswith(ending))]
 
     ROOT = dirname(@__DIR__)
 
@@ -33,6 +35,7 @@ function clean(; distclean=false, _exit=true)
 
     ###########################################################################
     CLEAN = String[]
+    append!(CLEAN, _glob(ROOT, ".info"))
     ###########################################################################
 
     ###########################################################################
