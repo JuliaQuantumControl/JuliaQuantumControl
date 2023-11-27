@@ -1,0 +1,13 @@
+[default]
+extend-ignore-identifiers-re = [
+    "[A-Z]T",
+    "[0-9abcdef]{8}",
+    "[A-Z][a-z]+[A-Z]{2,5}[0-9]{4}",
+]
+
+[default.extend-words]
+ket = "ket"
+braket = "braket"
+
+[files]
+extend-exclude = ["*.bib", "Manifest.toml"]
