@@ -10,4 +10,4 @@ ket = "ket"
 braket = "braket"
 
 [files]
-extend-exclude = ["*.bib", "Manifest.toml"]
+extend-exclude = ["*.bib", "*.toml"]
