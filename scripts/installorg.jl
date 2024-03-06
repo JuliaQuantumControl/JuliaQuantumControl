@@ -87,6 +87,7 @@ function installorg(;github="add", localfolders=true, dependencies_only=true)
             url="https://github.com/JuliaQuantumControl/QuantumControlRegistry.git"
         )
     )
+    Pkg.Registry.update()
     project_toml = Pkg.project()
     current_package = get_current_package()
     git_root = find_git_root()
