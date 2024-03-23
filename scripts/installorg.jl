@@ -98,7 +98,7 @@ function installorg(;github="add", localfolders=true, dependencies_only=true)
     end
     # Counter-intuitively, we must dev-install packages in their reverse
     # dependency order. This is because Pkg always fully instantiates an
-    # environment. In a project with depencies A, B where B depends on A, if we
+    # environment. In a project with dependencies A, B where B depends on A, if we
     # dev-install A, Pkg will try to also install B (from the registry!). This
     # will fail if the *released* B is incompatible with the dev-installed A.
     # However, if we dev-install B first, it will install a released version of

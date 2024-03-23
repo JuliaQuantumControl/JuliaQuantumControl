@@ -3,6 +3,7 @@ extend-ignore-identifiers-re = [
     "[A-Z]T",
     "[0-9abcdef]{8}",
     "[A-Z][a-z]+[A-Z]{2,5}[0-9]{4}",
+    "TEH_field\\d(Re|Im)",
 ]
 
 [default.extend-words]

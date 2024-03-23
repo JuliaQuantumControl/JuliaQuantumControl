@@ -47,7 +47,7 @@ Revise, JuliaFormatter, LiveServer, Plots with unicode backend are active.
 
 NOTE: Each org package also has its own "make devrepl"/`devrepl.jl` that may be
 more convenient to use when working on that particular package. The devrepls
-for the indvidual packages will also have access to the current checkout of all
+for the individual packages will also have access to the current checkout of all
 org packages that they depend on.
 *******************************************************************************
 """

@@ -79,7 +79,7 @@ For each package, for a release `X.Y.Z`, e.g. `1.0.0`, do the following from the
 
 ## The QuantumControlRegistry
 
-[Working with unregistered packages in Julia is tricky.](https://discourse.julialang.org/t/cant-figure-out-how-to-dev-install-unregistered-package/70298). Therefore, we have a [QuantumControlRegistry](https://github.com/JuliaQuantumControl/QuantumControlRegistry) to register any packages withing the `JuliaQuantumControl` organization that should not be or are not ready yet for the [Julia General Registry](https://github.com/JuliaRegistries/General). Packages must be registered *either* in `QuantumControlRegistry` *or* in `General`: when a package gets added to `General`, it should be removed from `QuantumControlRegistry`.
+[Working with unregistered packages in Julia is tricky.](https://discourse.julialang.org/t/cant-figure-out-how-to-dev-install-unregistered-package/70298). Therefore, we have a [QuantumControlRegistry](https://github.com/JuliaQuantumControl/QuantumControlRegistry) to register any packages within the `JuliaQuantumControl` organization that should not be or are not ready yet for the [Julia General Registry](https://github.com/JuliaRegistries/General). Packages must be registered *either* in `QuantumControlRegistry` *or* in `General`: when a package gets added to `General`, it should be removed from `QuantumControlRegistry`.
 
 To add the `QuantumControlRegistry` to your julia installation, run
 
