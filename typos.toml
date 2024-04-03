@@ -9,6 +9,8 @@ extend-ignore-identifiers-re = [
 [default.extend-words]
 ket = "ket"
 braket = "braket"
+wrk = "wrk"
+pn = "pn"
 
 [files]
 extend-exclude = ["*.bib", "*.toml"]
