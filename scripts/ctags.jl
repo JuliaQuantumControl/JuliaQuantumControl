@@ -51,6 +51,8 @@ function create_tags()
     org_root = dirname(@__DIR__)
     folders = [joinpath(org_root, "$package.jl") for package in ORG_PACKAGES]
     src_folders = [joinpath(folder, "src") for folder in folders]
+    append!(src_folders, [joinpath(folder, "ext") for folder in folders])
+    filter!(isdir, src_folders)
     run(Cmd(["ctags", "--sort=no", "-R", src_folders...]))
     check_ctags_version("tags")
     # Letting `ctags` sort the file was found to be unreliable
