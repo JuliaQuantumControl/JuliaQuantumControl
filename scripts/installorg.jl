@@ -8,6 +8,7 @@ ORG_PACKAGES = [
     "QuantumGradientGenerators",
     "Krotov",
     "GRAPE",
+    "ParameterizedQuantumControl",
     "QuantumControl",
     "QuantumControlTestUtils",
     "GRAPELinesearchAnalysis",
