@@ -13,7 +13,7 @@ make clone
 This will clone all the active project repos within the [JuliaQuantumControl][] organization into a subfolder of `JuliaQuantumControl`. You may then navigate into any of the project folders for development, e.g.
 
 ```
-cd QuantumControlBase.jl
+cd QuantumControl.jl
 make test
 make devrepl
 ```

@@ -25,12 +25,12 @@ Revise, JuliaFormatter, LiveServer, Plots with unicode backend are active.
 * `create_tags()` – Create a `tags` (exuberant ctags) file for code navigation
 * `testall(genhtml=true)` –
   Also write an HTML coverage report for every package.
-* `include("QuantumControlBase.jl/test/runtests.jl")` –
-  Run the test suite for `QuantumControlBase`. This may require a previous call
+* `include("QuantumControl.jl/test/runtests.jl")` –
+  Run the test suite for `QuantumControl`. This may require a previous call
   to `testall()` to ensure that the subproject test environments are properly
   initialized.
-* `include("QuantumControlBase.jl/devrepl.jl")` –
-  Switch to a development REPL for `QuantumControlBase`. To switch back,
+* `include("QuantumControl.jl/devrepl.jl")` –
+  Switch to a development REPL for `QuantumControl`. To switch back,
   include the org-`devrepl.jl` (`include("../devrepl.jl")`)
 * `format(".")` – Apply code formatting to all files
 * `serve(dir="QuantumControl.jl/docs/build" [port=8000, verbose=false])` –

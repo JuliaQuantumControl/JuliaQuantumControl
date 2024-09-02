@@ -4,7 +4,6 @@ import Pkg
 # can depend on earlier ones, but not vice versa.
 ORG_PACKAGES = [
     "QuantumPropagators",
-    "QuantumControlBase",
     "QuantumGradientGenerators",
     "Krotov",
     "GRAPE",
@@ -69,7 +68,7 @@ packages in `ORG_PACKAGES` will be installed (which may modify `Project.toml`).
 
 It is assumed that the organization has been set up with the clone.jl script.
 That is, from the JuliaQuantumControl folder, the subprojects are in direct
-subfolders, e.g. "QuantumControlBase.jl", and from the perspective of each
+subfolders, e.g. "QuantumControl.jl", and from the perspective of each
 package, the sibling packages are in sibling folders.
 
 Thus, the install scripts will check for the checkouts to dev-install as
