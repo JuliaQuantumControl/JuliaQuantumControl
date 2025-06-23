@@ -13,4 +13,4 @@ wrk = "wrk"
 pn = "pn"
 
 [files]
-extend-exclude = ["*.bib", "*.toml"]
+extend-exclude = ["*.bib", "*.toml", "*.csl"]
