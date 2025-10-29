@@ -106,8 +106,11 @@ function installorg(;github="add", localfolders=true, dependencies_only=true)
     # everything is OK
     for package in reverse(ORG_PACKAGES)
         if package == current_package
-            @info "Dev-install $package as current project from $git_root"
-            Pkg.develop(path=git_root)
+            current_relpath = relpath(git_root, pwd())
+            # We use a relative path to avoid problems with `[sources]`.
+            # See https://github.com/JuliaLang/Pkg.jl/issues/4426
+            @info "Dev-install $package as current project from $git_root (relative path `$current_relpath`)"
+            Pkg.develop(path=current_relpath)
         else
             if !(package in keys(project_toml.dependencies))
                 if dependencies_only
