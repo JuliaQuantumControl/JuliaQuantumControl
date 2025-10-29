@@ -80,11 +80,11 @@ will install the master branch of any sibling package from Github. For
 `Pkg.develop`. Any other value (e.g.  `github=false`) prevents installation
 from Github.
 """
-function installorg(;github="add", localfolders=true, dependencies_only=true)
+function installorg(; github = "add", localfolders = true, dependencies_only = true)
     Pkg.Registry.add(Pkg.RegistrySpec("General"))
     Pkg.Registry.add(
         Pkg.RegistrySpec(
-            url="https://github.com/JuliaQuantumControl/QuantumControlRegistry.git"
+            url = "https://github.com/JuliaQuantumControl/QuantumControlRegistry.git"
         )
     )
     Pkg.Registry.update()
@@ -110,7 +110,7 @@ function installorg(;github="add", localfolders=true, dependencies_only=true)
             # We use a relative path to avoid problems with `[sources]`.
             # See https://github.com/JuliaLang/Pkg.jl/issues/4426
             @info "Dev-install $package as current project from $git_root (relative path `$current_relpath`)"
-            Pkg.develop(path=current_relpath)
+            Pkg.develop(path = current_relpath)
         else
             if !(package in keys(project_toml.dependencies))
                 if dependencies_only
@@ -128,7 +128,7 @@ function installorg(;github="add", localfolders=true, dependencies_only=true)
                 for pkg_path ∈ path_candidates
                     if isdir(pkg_path)
                         @info "Dev-install $package from $pkg_path"
-                        Pkg.develop(path=pkg_path)
+                        Pkg.develop(path = pkg_path)
                         installed = true
                         break
                     end
@@ -137,10 +137,15 @@ function installorg(;github="add", localfolders=true, dependencies_only=true)
             if !installed  # fallback
                 if github == "add"
                     @info "Add $package#master from Github"
-                    Pkg.add(;url="https://github.com/JuliaQuantumControl/$package.jl", rev="master")
+                    Pkg.add(;
+                        url = "https://github.com/JuliaQuantumControl/$package.jl",
+                        rev = "master"
+                    )
                 elseif github == "develop"
                     @info "Dev-install $package from Github"
-                    Pkg.develop(;url="https://github.com/JuliaQuantumControl/$package.jl")
+                    Pkg.develop(;
+                        url = "https://github.com/JuliaQuantumControl/$package.jl"
+                    )
                 else
                     @error "$package could not be installed (github=false)"
                 end

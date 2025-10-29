@@ -6,8 +6,9 @@ include(joinpath(@__DIR__, "installorg.jl"))  # define ORG_PACKAGES
 function check_circular_dependencies()
     org_root = dirname(@__DIR__)
     dependencies = Dict(
-        package => keys(TOML.parsefile(joinpath(org_root, "$package.jl", "Project.toml"))["deps"]) for
-        package in ORG_PACKAGES
+        package => keys(
+            TOML.parsefile(joinpath(org_root, "$package.jl", "Project.toml"))["deps"]
+        ) for package in ORG_PACKAGES
     )
     ok = true
     for package in ORG_PACKAGES

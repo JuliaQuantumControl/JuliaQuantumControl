@@ -15,6 +15,7 @@ endef
 export PRINT_HELP_JLSCRIPT
 
 help:  ## show this help
+	@git config --local blame.ignoreRevsFile .git-blame-ignore-revs
 	@julia -e "$$PRINT_HELP_JLSCRIPT" < $(MAKEFILE_LIST)
 
 clone: ## Clone all org repositories
@@ -27,6 +28,7 @@ status: ## Show git status for all checkouts
 	@$(JULIA) -e 'include("scripts/gitutils.jl"); status()'
 
 Manifest.toml:
+	@git config --local blame.ignoreRevsFile .git-blame-ignore-revs
 	@$(JULIA) --project=. -e 'include("scripts/installorg.jl"); installorg()'
 
 tags:  ## Generate a ctags file across all projects

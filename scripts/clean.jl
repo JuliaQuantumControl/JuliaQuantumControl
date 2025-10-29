@@ -6,12 +6,12 @@ include(joinpath(@__DIR__, "installorg.jl"))  # define ORG_PACKAGES
 Clean up build/doc/testing artifacts for all org repos.
 With `distclean=true`, restore to clean checkout state.
 """
-function clean(; distclean=false, _exit=true)
+function clean(; distclean = false, _exit = true)
 
     _exists(name) = isfile(name) || isdir(name)
     _push!(lst, name) = _exists(name) && push!(lst, name)
     _glob(folder, ending) =
-        [name for name in readdir(folder; join=true) if (name |> endswith(ending))]
+        [name for name in readdir(folder; join = true) if (name |> endswith(ending))]
 
     ROOT = dirname(@__DIR__)
 
@@ -29,7 +29,13 @@ function clean(; distclean=false, _exit=true)
             continue
         end
         @info "== Clean $package =="
-        run(Cmd([julia, "-e", "include(\"$clean_jl\"); clean(distclean=$distclean, _exit=false)"]))
+        run(
+            Cmd([
+                julia,
+                "-e",
+                "include(\"$clean_jl\"); clean(distclean=$distclean, _exit=false)"
+            ])
+        )
     end
     ###########################################################################
 
@@ -46,12 +52,12 @@ function clean(; distclean=false, _exit=true)
 
     for name in CLEAN
         @info "rm $name"
-        rm(name, force=true, recursive=true)
+        rm(name, force = true, recursive = true)
     end
     if distclean
         for name in DISTCLEAN
             @info "rm $name"
-            rm(name, force=true, recursive=true)
+            rm(name, force = true, recursive = true)
         end
         if _exit
             @info "Exiting"
@@ -61,4 +67,4 @@ function clean(; distclean=false, _exit=true)
 
 end
 
-distclean() = clean(distclean=true)
+distclean() = clean(distclean = true)
