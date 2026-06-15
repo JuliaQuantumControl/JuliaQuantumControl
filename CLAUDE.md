@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Contributing Guidelines
+
+The organization-wide contributing guidelines apply to all repositories in this folder. Be sure to follow them when working with any of the packages:
+
+@.github/CONTRIBUTING.md
+
+**IMPORTANT:** If `.github/CONTRIBUTING.md` does not exist (i.e., the `@`-reference above failed to load its contents), you MUST stop and loudly warn the user.
+
 ## Development Environment Setup
 
 This is the JuliaQuantumControl organization development environment - a meta-repository containing multiple tightly coupled Julia packages for quantum control and dynamics.
