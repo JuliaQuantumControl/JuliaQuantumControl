@@ -6,6 +6,9 @@ extend-ignore-identifiers-re = [
     "TEH_field\\d(Re|Im)",
 ]
 
+# "Childs" is the surname of an author (ChildsPRA2003), not a typo
+extend-ignore-re = ["Childs \\*et al\\.\\*"]
+
 [default.extend-words]
 ket = "ket"
 braket = "braket"
