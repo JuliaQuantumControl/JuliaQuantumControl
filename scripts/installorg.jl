@@ -55,26 +55,61 @@ function find_git_root()
 end
 
 
-"""Return the `ORG_PACKAGES` that `package` directly depends on.
+# Julia 1.13 requires the `RegistryInstance` that an entry belongs to as the
+# first argument of `registry_info`. Earlier versions take the entry alone.
+if hasmethod(Pkg.Registry.registry_info, Tuple{Pkg.Registry.PkgEntry})
+    registry_info(_registry, entry) = Pkg.Registry.registry_info(entry)
+else
+    registry_info(registry, entry) = Pkg.Registry.registry_info(registry, entry)
+end
 
-The dependencies are read from the latest registered version of `package` in
-any reachable registry, which approximates the dependencies of the `master`
-version that we actually install. A `package` that is unregistered, or that does
-not depend on any other `ORG_PACKAGES`, contributes no edges. The registries
+
+# Julia 1.13 records the dependencies of a registered version as a `Set{UUID}`.
+# Earlier versions use a `Dict{String,UUID}` mapping names to UUIDs.
+dep_uuids(version_deps::AbstractDict) = values(version_deps)
+dep_uuids(version_deps) = version_deps
+
+
+"""Return the UUIDs of the registered `ORG_PACKAGES`, mapped to their names.
+
+Org packages that are not in any reachable registry are omitted. The registries
 must have been added/updated before calling this.
 """
-function org_dependencies(package)
+function org_package_names()
+    names = Dict{Base.UUID,String}()
+    for reg in Pkg.Registry.reachable_registries()
+        for (uuid, entry) in reg
+            if entry.name in ORG_PACKAGES
+                names[uuid] = entry.name
+            end
+        end
+    end
+    return names
+end
+
+
+"""Return the `ORG_PACKAGES` that `package` directly depends on.
+
+The `names` are the UUID-to-name map from `org_package_names`. The dependencies
+are read from the latest registered version of `package` in any reachable
+registry, which approximates the dependencies of the `master` version that we
+actually install. A `package` that is unregistered, or that does not depend on
+any other `ORG_PACKAGES`, contributes no edges. The registries must have been
+added/updated before calling this.
+"""
+function org_dependencies(package, names)
     deps = Set{String}()
     for reg in Pkg.Registry.reachable_registries()
         for (_uuid, entry) in reg
             entry.name == package || continue
-            info = Pkg.Registry.init_package_info!(entry)
+            info = registry_info(reg, entry)
             isempty(info.version_info) && continue
             vmax = maximum(keys(info.version_info))
             for (vrange, version_deps) in info.deps
                 vmax in vrange || continue
-                for depname in keys(version_deps)
-                    if depname in ORG_PACKAGES
+                for uuid in dep_uuids(version_deps)
+                    depname = get(names, uuid, nothing)
+                    if !isnothing(depname)
                         push!(deps, depname)
                     end
                 end
@@ -95,13 +130,14 @@ the registry, which fails when the current package is a new breaking version
 that no released sibling is compatible with yet.
 """
 function org_dependency_closure(direct)
+    names = org_package_names()
     closure = Set{String}()
     todo = collect(direct)
     while !isempty(todo)
         package = pop!(todo)
         package in closure && continue
         push!(closure, package)
-        for dep in org_dependencies(package)
+        for dep in org_dependencies(package, names)
             dep in closure || push!(todo, dep)
         end
     end
