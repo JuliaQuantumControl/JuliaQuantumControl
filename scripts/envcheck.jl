@@ -16,9 +16,9 @@
 # * `apply-sources ENV` – Apply the `[sources]` of the environment with
 #   `Pkg.develop`/`Pkg.add`. Only has an effect on Julia < 1.11, which ignores
 #   `[sources]`.
-# * `pin-lowest ENV LOWEST_MANIFEST` – Pin the dependencies of the package in
-#   the environment to the versions in `LOWEST_MANIFEST` (as written by
-#   `julia-actions/julia-downgrade-compat`).
+# * `pin-lowest ENV LOWEST_MANIFEST` – Re-resolve the environment with the
+#   dependencies of the package pinned to the versions in `LOWEST_MANIFEST` (as
+#   written by `julia-actions/julia-downgrade-compat`).
 # * `held-back ENV` – Emit a warning for every dependency of the package that
 #   the environment holds back below the newest version the package's
 #   `[compat]` allows.
@@ -268,8 +268,19 @@ function pin_lowest(env, lowest_manifest)
         (haskey(entry, "path") || haskey(entry, "repo-url")) && continue
         push!(specs, Pkg.PackageSpec(; name, version = VersionNumber(entry["version"])))
     end
+    # The lowest manifest also floors the test-only dependencies (including
+    # sibling packages), which may be incompatible with the package or its tests.
+    # Resolve the environment from scratch, with only the dependencies of the
+    # package pinned to their lowest versions.
+    rm(joinpath(env, "Manifest.toml"); force = true)
+    apply_sources(env)  # Julia < 1.11 ignores `[sources]`
     Pkg.activate(env)
-    isempty(specs) || Pkg.add(specs)
+    if isempty(specs)
+        Pkg.resolve()
+    else
+        Pkg.add(specs)
+    end
+    Pkg.instantiate()
     Pkg.status(; mode = Pkg.PKGMODE_MANIFEST)
     return true
 end
