@@ -256,8 +256,13 @@ function installorg(;
             end
         end
         if !isnothing(local_path)
-            @info "Will dev-install $package from $local_path"
-            push!(develop_specs, Pkg.PackageSpec(path = local_path))
+            # As for the current package, we must use a relative path, or else
+            # the absolute path ends up in `[sources]` (Julia >= 1.12). Pkg
+            # resolves the path relative to the CWD and stores it relative to
+            # the project/manifest file.
+            local_relpath = relpath(realpath(local_path), realpath(pwd()))
+            @info "Will dev-install $package from $local_path (relative path `$local_relpath`)"
+            push!(develop_specs, Pkg.PackageSpec(path = local_relpath))
         elseif github == "add"
             @info "Will add $package#master from Github"
             push!(
