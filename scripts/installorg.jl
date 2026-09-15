@@ -1,7 +1,31 @@
-import Pkg
+# Switch the `test` and `docs` environments of a package to the local checkouts
+# of its sibling packages in the JuliaQuantumControl development environment.
+#
+# From the root of a package checkout (e.g. `QuantumControl.jl`), run
+#
+#     julia ../scripts/installorg.jl [ENV...] [--revert] [--no-precompile]
+#
+# where `ENV` are the environment folders to modify (default: `test` and
+# `docs`, if they exist). With `--revert`, the environments are restored to
+# their state before `installorg` (registered releases or URL `[sources]` of
+# siblings).
+#
+# This is *not* part of the default workflow: `make test` and CI use the
+# registered versions of sibling packages, or the URL `[sources]` committed in
+# `test/Project.toml` and `docs/Project.toml`. See CONTRIBUTING.md.
+#
+# On Julia >= 1.11, sibling packages are switched to local checkouts by writing
+# relative `path` entries to the `[sources]` of the environment's
+# `Project.toml`. These entries must never be committed (the `envcheck.jl lint`
+# CI check rejects them). On Julia 1.10, which ignores `[sources]`, the
+# siblings are dev-installed with `Pkg.develop` instead. In both cases,
+# `installorg` keeps a backup of the original `Project.toml` for `--revert`.
 
-# ORG_PACKAGES must be ordered by their internal dependencies: Later packages
-# can depend on earlier ones, but not vice versa.
+import Pkg
+import TOML
+
+# All packages in the JuliaQuantumControl org that are part of the development
+# environment (cloned by `make clone`). The order is not significant.
 ORG_PACKAGES = [
     "QuantumPropagators",
     "QuantumGradientGenerators",
@@ -14,130 +38,46 @@ ORG_PACKAGES = [
     "TwoQubitWeylChamber",
 ]
 
+const ORG_ROOT = dirname(@__DIR__)
 
-"""Return which one of ORG_PACKAGES we're currently in.
 
-This is determined by the `GITHUB_REPOSITORY` environment variable or the
-folder name of the current git checkout.
-
-If the current package cannot be determined, return an empty string.
-"""
-function get_current_package()
-    if "GITHUB_REPOSITORY" ∈ keys(ENV)
-        reponame = split(ENV["GITHUB_REPOSITORY"], "/")[end]
-    else
-        git_root = find_git_root()
-        reponame = basename(git_root)
-    end
-    for package in ORG_PACKAGES
-        if !isnothing(match(Regex("^$package(\\.jl)?\$"), reponame))
-            return package
-        end
-    end
-    return ""
+"""Return the path of the local checkout of an org `package`, or `nothing`."""
+function local_checkout(package)
+    path = joinpath(ORG_ROOT, "$package.jl")
+    return isfile(joinpath(path, "Project.toml")) ? path : nothing
 end
 
 
-"""Return the absolute path of the folder containing `.git`.
+"""Return the `ORG_PACKAGES` that the local checkout of `package` depends on.
 
-If not `.git` folder can be found, return the current working directory.
+Both `[deps]` and `[weakdeps]` count. A `package` without a local checkout
+contributes no dependencies.
 """
-function find_git_root()
-    root = pwd()
-    while !isdir(joinpath(root, ".git"))
-        parent = dirname(root)
-        if root == parent
-            return pwd()
-        end
-        root = parent
-    end
-    return root
-end
-
-
-# Julia 1.13 requires the `RegistryInstance` that an entry belongs to as the
-# first argument of `registry_info`. Earlier versions take the entry alone.
-if hasmethod(Pkg.Registry.registry_info, Tuple{Pkg.Registry.PkgEntry})
-    registry_info(_registry, entry) = Pkg.Registry.registry_info(entry)
-else
-    registry_info(registry, entry) = Pkg.Registry.registry_info(registry, entry)
-end
-
-
-# Julia 1.13 records the dependencies of a registered version as a `Set{UUID}`.
-# Earlier versions use a `Dict{String,UUID}` mapping names to UUIDs.
-dep_uuids(version_deps::AbstractDict) = values(version_deps)
-dep_uuids(version_deps) = version_deps
-
-
-"""Return the UUIDs of the registered `ORG_PACKAGES`, mapped to their names.
-
-Org packages that are not in any reachable registry are omitted. The registries
-must have been added/updated before calling this.
-"""
-function org_package_names()
-    names = Dict{Base.UUID,String}()
-    for reg in Pkg.Registry.reachable_registries()
-        for (uuid, entry) in reg
-            if entry.name in ORG_PACKAGES
-                names[uuid] = entry.name
-            end
-        end
-    end
-    return names
-end
-
-
-"""Return the `ORG_PACKAGES` that `package` directly depends on.
-
-The `names` are the UUID-to-name map from `org_package_names`. The dependencies
-are read from the latest registered version of `package` in any reachable
-registry, which approximates the dependencies of the `master` version that we
-actually install. A `package` that is unregistered, or that does not depend on
-any other `ORG_PACKAGES`, contributes no edges. The registries must have been
-added/updated before calling this.
-"""
-function org_dependencies(package, names)
-    deps = Set{String}()
-    for reg in Pkg.Registry.reachable_registries()
-        for (_uuid, entry) in reg
-            entry.name == package || continue
-            info = registry_info(reg, entry)
-            isempty(info.version_info) && continue
-            vmax = maximum(keys(info.version_info))
-            for (vrange, version_deps) in info.deps
-                vmax in vrange || continue
-                for uuid in dep_uuids(version_deps)
-                    depname = get(names, uuid, nothing)
-                    if !isnothing(depname)
-                        push!(deps, depname)
-                    end
-                end
-            end
-        end
-    end
-    return deps
+function org_dependencies(package)
+    path = local_checkout(package)
+    isnothing(path) && return Set{String}()
+    project = TOML.parsefile(joinpath(path, "Project.toml"))
+    names = union(keys(get(project, "deps", Dict())), keys(get(project, "weakdeps", Dict())))
+    return Set(filter(in(ORG_PACKAGES), names))
 end
 
 
 """Return the transitive `ORG_PACKAGES` dependency closure of `direct`.
 
-Starting from the `direct` package names, follow `org_dependencies` edges until
-no new `ORG_PACKAGES` are discovered. The result includes the `direct` packages
-themselves. This is the set of org packages that must be dev-installed: a *bare*
-list of direct dependencies would let Pkg pull a transitive org dependency from
-the registry, which fails when the current package is a new breaking version
-that no released sibling is compatible with yet.
+The result includes the `direct` packages themselves. All of them must be
+switched to local checkouts together: if only the direct dependencies were
+switched, Pkg would take a transitive org dependency from the registry, which
+fails when a local checkout is a new breaking version that no released sibling
+is compatible with yet.
 """
 function org_dependency_closure(direct)
-    names = org_package_names()
     closure = Set{String}()
     todo = collect(direct)
     while !isempty(todo)
         package = pop!(todo)
         package in closure && continue
         push!(closure, package)
-        for dep in org_dependencies(package, names)
+        for dep in org_dependencies(package)
             dep in closure || push!(todo, dep)
         end
     end
@@ -145,172 +85,138 @@ function org_dependency_closure(direct)
 end
 
 
-"""Install dev-versions of all the projects in the JuliaQuantumControl org.
+"""Return the name of the package that contains the environment folder `env`.
 
-```julia
-installorg(;github="add", localfolders=true, dependencies_only=true, precompile=true)
-```
-
-dev-installs packages from `ORG_PACKAGES` into the current environment. By
-default, the transitive closure of the `ORG_PACKAGES` that the current
-`Project.toml` depends on (directly or via another org package) will be
-installed. By setting `dependencies_only=false`, *all* packages in
-`ORG_PACKAGES` will be installed (which may modify `Project.toml`).
-
-With `precompile=false`, the final `Pkg.precompile()` is skipped. This is useful
-in CI steps whose subsequent Julia process runs under non-default compile flags
-(e.g. `--check-bounds=yes` or `--code-coverage`): such a process keys its
-precompile cache on those flags and cannot reuse caches built here under the
-default flags, so precompiling now would be wasted work. In that case, rely on
-load-time precompilation in the consuming process (with cross-run caching of the
-depot) instead. As a script, pass `--no-precompile` for the same effect.
-
-It is assumed that the organization has been set up with the clone.jl script.
-That is, from the JuliaQuantumControl folder, the subprojects are in direct
-subfolders, e.g. "QuantumControl.jl", and from the perspective of each
-package, the sibling packages are in sibling folders.
-
-Thus, the install scripts will check for the checkouts to dev-install as
-subfolders of the JuliaQuantumControl repo containing this function (devrepl in
-JuliaQuantumControl) or in a sibling folder (devrepl of a package). If neither
-is available (e.g, when running on Github CI), or when `localfolders=false`, it
-will install the master branch of any sibling package from Github. For
-`github="add"`, this is done via `Pkg.add`, and for `github="develop"` via
-`Pkg.develop`. Any other value (e.g.  `github=false`) prevents installation
-from Github.
+For `test` or `docs` inside a package checkout, this is the name of the
+package. For an environment that is not a sub-folder of a package (e.g., the
+root of the development environment), return `nothing`.
 """
-function installorg(;
-    github = "add",
-    localfolders = true,
-    dependencies_only = true,
-    precompile = true
-)
-    Pkg.Registry.add(Pkg.RegistrySpec("General"))
-    Pkg.Registry.add(
-        Pkg.RegistrySpec(
-            url = "https://github.com/JuliaQuantumControl/QuantumControlRegistry.git"
-        )
-    )
-    Pkg.Registry.update()
-    project_toml = Pkg.project()
-    current_package = get_current_package()
-    git_root = find_git_root()
-    if current_package == ""
-        @info "No current package; CWD is $git_root"
-    else
-        @info "Current package is $current_package at $git_root"
+function parent_package(env)
+    parent_toml = joinpath(dirname(abspath(env)), "Project.toml")
+    if abspath(env) != ORG_ROOT && isfile(parent_toml)
+        return get(TOML.parsefile(parent_toml), "name", nothing)
     end
-    # By default we install the *transitive* closure of the org packages that
-    # the current project depends on. Restricting to the directly-listed
-    # dependencies would let Pkg pull a transitive org dependency (e.g.
-    # QuantumControl, pulled in by QuantumControlTestUtils) from the registry,
-    # which fails for a breaking release as described below. With
-    # `dependencies_only=false`, *all* org packages are installed instead.
-    if dependencies_only
-        direct = [p for p in ORG_PACKAGES if p in keys(project_toml.dependencies)]
-        needed = org_dependency_closure(direct)
-    else
-        needed = Set(ORG_PACKAGES)
+    return nothing
+end
+
+
+"""Return the file in which `installorg` saves the original `Project.toml` of `env`.
+
+The backups are in the `.installorg` folder of the development environment
+(ignored by git), so that `--revert` can restore uncommitted changes.
+"""
+function backup_file(env)
+    package = something(parent_package(env), "JuliaQuantumControl")
+    envname = basename(rstrip(abspath(env), '/'))
+    return joinpath(ORG_ROOT, ".installorg", package, envname, "Project.toml")
+end
+
+
+"""Switch the environment in the folder `env` to local sibling checkouts."""
+function installorg(env; precompile = true)
+    project_file = joinpath(env, "Project.toml")
+    own = parent_package(env)
+    deps = collect(keys(get(TOML.parsefile(project_file), "deps", Dict())))
+    if !isnothing(own)
+        # The org dependencies of the package itself (which is in the
+        # environment via `{path = ".."}`) must also be local checkouts
+        own_project = TOML.parsefile(joinpath(dirname(abspath(env)), "Project.toml"))
+        append!(deps, keys(get(own_project, "deps", Dict())))
+        append!(deps, keys(get(own_project, "weakdeps", Dict())))
     end
-    # We collect *all* sibling packages and install them together, so that the
-    # environment is only ever resolved as a consistent set of development
-    # versions. Installing the packages one at a time would force Pkg to fall
-    # back to the *released* (registered) version of any not-yet-installed
-    # sibling. That fails whenever the current package is a new breaking version
-    # that no released sibling is compatible with yet (e.g. when releasing a
-    # breaking QuantumPropagators version: the released downstream packages
-    # still require the previous version, so no consistent environment exists
-    # until every sibling is taken from a development version simultaneously).
-    #
-    # `develop_specs` are installed from a local checkout (`path`); `add_specs`
-    # are installed from the master branch on Github. The current package itself
-    # is always developed from its local path, and -- crucially -- *last*, so
-    # that its (single) resolve already sees every sibling as a development
-    # version rather than pulling siblings from the registry.
-    add_specs = Pkg.PackageSpec[]
-    develop_specs = Pkg.PackageSpec[]
-    current_relpath = nothing
-    for package in reverse(ORG_PACKAGES)
-        if package == current_package
-            # We use a relative path to avoid problems with `[sources]`.
-            # See https://github.com/JuliaLang/Pkg.jl/issues/4426
-            current_relpath = relpath(git_root, pwd())
-            continue
-        end
-        if !(package in needed)
-            @info "Skipping $package (not in dependency closure)"
-            continue
-        end
-        path_candidates = [
-            joinpath(@__DIR__, "..", "$package.jl"),
-            joinpath(git_root, "$package.jl"),
-            joinpath(dirname(git_root), "$package.jl"),
-        ]
-        local_path = nothing
-        if localfolders
-            for pkg_path ∈ path_candidates
-                if isdir(pkg_path)
-                    local_path = pkg_path
-                    break
-                end
-            end
-        end
-        if !isnothing(local_path)
-            # As for the current package, we must use a relative path, or else
-            # the absolute path ends up in `[sources]` (Julia >= 1.12). Pkg
-            # resolves the path relative to the CWD and stores it relative to
-            # the project/manifest file.
-            local_relpath = relpath(realpath(local_path), realpath(pwd()))
-            @info "Will dev-install $package from $local_path (relative path `$local_relpath`)"
-            push!(develop_specs, Pkg.PackageSpec(path = local_relpath))
-        elseif github == "add"
-            @info "Will add $package#master from Github"
-            push!(
-                add_specs,
-                Pkg.PackageSpec(
-                    url = "https://github.com/JuliaQuantumControl/$package.jl",
-                    rev = "master"
-                )
-            )
-        elseif github == "develop"
-            @info "Will dev-install $package#master from Github"
-            # `develop` does not accept a `rev`; it tracks the default branch.
-            push!(
-                develop_specs,
-                Pkg.PackageSpec(
-                    url = "https://github.com/JuliaQuantumControl/$package.jl"
-                )
-            )
+    direct = [p for p in ORG_PACKAGES if (p in deps) && (p != own)]
+    needed = setdiff(org_dependency_closure(direct), [own])
+    siblings = Dict{String,String}()  # name => path relative to `env`
+    for package in sort(collect(needed))
+        path = local_checkout(package)
+        if isnothing(path)
+            @warn "No local checkout of $package: using registered version or URL source"
         else
-            @error "$package could not be installed (github=false)"
+            siblings[package] = relpath(realpath(path), realpath(env))
         end
     end
-    # Install siblings first (Github-master `add_specs`, then local/Github
-    # `develop_specs`), and the current package last.
-    if !isempty(add_specs)
-        @info "Add $(length(add_specs)) package(s) from Github master"
-        Pkg.add(add_specs)
+    @info "Switching $project_file to local checkouts" siblings
+    backup = backup_file(env)
+    if !isfile(backup)  # keep the original backup if `installorg` runs repeatedly
+        mkpath(dirname(backup))
+        cp(project_file, backup)
     end
-    if !isnothing(current_relpath)
-        @info "Dev-install $current_package as current project from $git_root (relative path `$current_relpath`)"
-        push!(develop_specs, Pkg.PackageSpec(path = current_relpath))
-    end
-    if !isempty(develop_specs)
-        @info "Dev-install $(length(develop_specs)) package(s)"
-        Pkg.develop(develop_specs)
-    end
-    @info "Instantiate"
-    Pkg.instantiate()
-    if precompile
-        @info "Precompile"
-        Pkg.precompile()
+    if VERSION >= v"1.11"
+        project = Pkg.Types.read_project(project_file)
+        for (package, path) in siblings
+            uuid = TOML.parsefile(joinpath(ORG_ROOT, "$package.jl", "Project.toml"))["uuid"]
+            project.deps[package] = Base.UUID(uuid)
+            project.sources[package] = Dict{String,Any}("path" => path)
+        end
+        Pkg.Types.write_project(project, project_file)
+        Pkg.activate(env)
+        Pkg.resolve()
     else
-        @info "Skipping precompile (precompile=false)"
+        Pkg.activate(env)
+        specs = [Pkg.PackageSpec(path = joinpath(env, path)) for path in values(siblings)]
+        if !isnothing(own)
+            # The package itself goes last, so that its resolve already sees all
+            # siblings as development versions.
+            push!(specs, Pkg.PackageSpec(path = dirname(abspath(env))))
+        end
+        isempty(specs) || Pkg.develop(specs)
     end
-    @info "Status"
+    Pkg.instantiate()
+    precompile && Pkg.precompile()
     Pkg.status()
 end
 
+
+"""Restore the environment in the folder `env` to its state before `installorg`.
+
+This restores `Project.toml` from the backup made by `installorg` (or, if there
+is no backup, from git) and re-instantiates the environment from scratch. Just
+removing `[sources]` entries and re-resolving does not reliably switch back from
+local checkouts (it does not work on Julia 1.10 and 1.11).
+"""
+function revertorg(env; precompile = true)
+    project_file = joinpath(env, "Project.toml")
+    manifest_file = joinpath(env, "Manifest.toml")
+    backup = backup_file(env)
+    if isfile(backup)
+        cp(backup, project_file; force = true)
+        rm(backup)
+    else
+        @warn "No backup of $project_file from installorg: restoring the committed version"
+        run(`git checkout -- $project_file`)
+    end
+    rm(manifest_file; force = true)
+    Pkg.activate(env)
+    own = parent_package(env)
+    if (VERSION < v"1.11") && !isnothing(own)
+        # Julia 1.10 ignores `[sources]`; URL sources are not applied here, see
+        # `envcheck.jl apply-sources`.
+        Pkg.develop(Pkg.PackageSpec(path = dirname(abspath(env))))
+    end
+    Pkg.instantiate()
+    precompile && Pkg.precompile()
+    Pkg.status()
+end
+
+
+function main(args)
+    revert = "--revert" in args
+    precompile = !("--no-precompile" in args)
+    envs = filter(arg -> !startswith(arg, "--"), args)
+    if isempty(envs)
+        envs = filter(env -> isfile(joinpath(env, "Project.toml")), ["test", "docs"])
+    end
+    isempty(envs) && error("No environments found. Run from the root of a package checkout.")
+    for env in envs
+        if revert
+            revertorg(env; precompile)
+        else
+            installorg(env; precompile)
+        end
+    end
+end
+
+
 if abspath(PROGRAM_FILE) == @__FILE__
-    installorg(precompile = !("--no-precompile" in ARGS))
+    main(ARGS)
 end

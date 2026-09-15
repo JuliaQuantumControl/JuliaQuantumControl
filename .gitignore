@@ -2,3 +2,5 @@
 /.github
 /Manifest.toml
 /tags
+/.installorg/
+/*.jl-dev-workflow/

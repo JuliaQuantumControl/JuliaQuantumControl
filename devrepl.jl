@@ -17,6 +17,6 @@ cd(@__DIR__)
 Pkg.activate(".")
 if !isfile("Manifest.toml")
     include(joinpath("scripts", "installorg.jl"))
-    installorg()
+    installorg(".")
 end
 include(joinpath("scripts", "init.jl"))

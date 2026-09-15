@@ -1,4 +1,4 @@
-.PHONY: help clone pull devrepl clean testall distclean check-circular-dependencies tags
+.PHONY: help clone pull status devrepl clean testall distclean check-circular-dependencies tags
 .DEFAULT_GOAL := help
 
 JULIA ?= julia
@@ -27,9 +27,10 @@ pull: ## Pull all org repositories
 status: ## Show git status for all checkouts
 	@$(JULIA) -e 'include("scripts/gitutils.jl"); status()'
 
+# The development environment uses the local checkouts of all org packages
 Manifest.toml:
 	@git config --local blame.ignoreRevsFile .git-blame-ignore-revs
-	@$(JULIA) --project=. -e 'include("scripts/installorg.jl"); installorg()'
+	@$(JULIA) -e 'include("scripts/installorg.jl"); installorg(".")'
 
 tags:  ## Generate a ctags file across all projects
 	@$(JULIA) --project=. -e 'include("scripts/ctags.jl"); create_tags()'
@@ -40,8 +41,8 @@ devrepl: Manifest.toml ## Start an interactive REPL with the dev-version of all 
 clean: ## Clean up build/doc/testing artifacts
 	$(JULIA) -e 'include("scripts/clean.jl"); clean()'
 
-testall: Manifest.toml  ## Run "make test" for all packages
-	$(JULIA) --project=. -e 'include("scripts/testall.jl"); testall()'
+testall:  ## Run "make test" for all packages
+	$(JULIA) -e 'include("scripts/testall.jl"); testall()'
 
 check-circular-dependencies:  ## Check all projects for circular dependencies
 	@$(JULIA) -e 'include("scripts/check_circular_deps.jl"); check_circular_dependencies()'

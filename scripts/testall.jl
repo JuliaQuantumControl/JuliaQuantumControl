@@ -1,34 +1,34 @@
-using QuantumControlTestUtils: test as _test
 include(joinpath(@__DIR__, "installorg.jl"))  # define ORG_PACKAGES
 
 
-"""Run the full test-suite for all projects.
+"""Run `make test` for all org packages that have a test suite.
 
-Keyword arguments are forwarded to `QuantumControlTestUtils.test`.
+```julia
+testall(; target="test")
+```
+
+Each package is tested in its own `test` environment, exactly as with `make
+test` in the package folder. That is, sibling packages are the registered
+releases, or whatever is specified in `[sources]`. With `target="coverage"`,
+run `make coverage` instead.
 """
-function testall(; root = nothing, project = nothing, kwargs...)
-    # `root` and `project` are just to capture those arguments from `kwargs`
-    julia = Base.julia_cmd().exec[1]
+function testall(; target = "test")
     org_root = dirname(@__DIR__)
+    failed = String[]
     for package in ORG_PACKAGES
         pkg_root = joinpath(org_root, "$package.jl")
-        testenv = joinpath(pkg_root, "test")
-        runtests_jl = joinpath(testenv, "runtests.jl")
-        if isfile(runtests_jl)
-            devrepl_jl = joinpath(pkg_root, "devrepl.jl")
-            if isfile(devrepl_jl)
-                if !isfile(joinpath(testenv, "Manifest.toml"))
-                    @info "Initializing devrepl for $package"
-                    run(`$julia $devrepl_jl`)
-                end
-                @info "Testing $package in its own test environment"
-                _test(; root = pkg_root, project = testenv, kwargs...)
-            else
-                @info "Testing $package in org test environment"
-                _test(; root = pkg_root, project = org_root, kwargs...)
+        if isfile(joinpath(pkg_root, "test", "runtests.jl"))
+            @info "Testing $package"
+            if !success(run(ignorestatus(`make -C $pkg_root $target`)))
+                push!(failed, package)
             end
         else
             @warn "No tests for $package"
         end
+    end
+    if isempty(failed)
+        @info "All tests passed"
+    else
+        error("Tests failed for: $(join(failed, ", "))")
     end
 end
