@@ -11,8 +11,9 @@
 #   CONTRIBUTING.md). With `--no-remote`, do not check that a `rev` exists on
 #   the remote.
 # * `warn-sources [ENV...]` – Emit a warning for every sibling package taken
-#   from a `[sources]` entry instead of its registered release. `ENV` defaults
-#   to `test` and `docs`.
+#   from a `[sources]` entry instead of its registered release, and for every
+#   such sibling that the package's `[compat]` requires in an unregistered
+#   version. `ENV` defaults to `test` and `docs`.
 # * `apply-sources ENV` – Apply the `[sources]` of the environment with
 #   `Pkg.develop`/`Pkg.add`. Only has an effect on Julia < 1.11, which ignores
 #   `[sources]`.
@@ -193,7 +194,32 @@ function describe_source(source)
 end
 
 
+"""Return the registered versions of the package `uuid` that are not yanked."""
+function registered_versions(uuid)
+    versions = Set{VersionNumber}()
+    for registry in Pkg.Registry.reachable_registries()
+        entry = get(registry.pkgs, uuid, nothing)
+        isnothing(entry) && continue
+        # Older versions of Julia have only the single-argument `registry_info`
+        info = if applicable(Pkg.Registry.registry_info, registry, entry)
+            Pkg.Registry.registry_info(registry, entry)
+        else
+            Pkg.Registry.registry_info(entry)
+        end
+        for (version, version_info) in info.version_info
+            version_info.yanked || push!(versions, version)
+        end
+    end
+    return versions
+end
+
+
 function warn_sources(envs)
+    root = read_toml("Project.toml")
+    root_deps = merge(get(root, "deps", Dict()), get(root, "weakdeps", Dict()))
+    root_compat = get(root, "compat", Dict())
+    registries_updated = false
+    checked_compat = Set{String}()
     for env in envs
         file = joinpath(env, "Project.toml")
         isfile(file) || continue
@@ -208,6 +234,29 @@ function warn_sources(envs)
                 file,
                 title = "Unreleased sibling package"
             )
+            (haskey(root_deps, pkg) && haskey(root_compat, pkg)) || continue
+            (pkg in checked_compat) && continue
+            push!(checked_compat, pkg)
+            if !registries_updated
+                # A missing or stale registry would report a registered version
+                # as unregistered. `Pkg.Registry.update` does not install a
+                # registry in a new depot (e.g., on CI).
+                if isempty(Pkg.Registry.reachable_registries())
+                    Pkg.Registry.add("General")
+                else
+                    Pkg.Registry.update()
+                end
+                registries_updated = true
+            end
+            spec = Pkg.Versions.semver_spec(root_compat[pkg])
+            if !any(in(spec), registered_versions(Base.UUID(root_deps[pkg])))
+                annotate(
+                    "warning",
+                    "The [compat] entry `$pkg = \"$(root_compat[pkg])\"` excludes all registered versions of $pkg. Until a compatible version of $pkg is registered, running the tests with `Pkg.test` (the Test job) and the lowest-compat job fail with \"Unsatisfiable requirements\" for $pkg: both resolve the dependencies of the package without the [sources] of the $env environment.";
+                    file = "Project.toml",
+                    title = "Unregistered sibling version"
+                )
+            end
         end
     end
     return true
